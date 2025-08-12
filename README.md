@@ -7,6 +7,13 @@ A **fast, modern YouTube downloader** with a polished **React/TypeScript** front
 
 Paste a link → Preview the video → Pick format/quality → Save it where you want.
 
+
+## ⚠️ IMPORTANT: Python and Node.js required
+
+You must have Python 3.9+ and Node.js 18+ installed before running the app.
+The Windows scripts and the local backend depend on them being available in your PATH.
+
+
 **Features:**
 
 * 📹 **Video:** MP4 (1080p / 720p / 480p / 360p)
