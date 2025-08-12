@@ -1,7 +1,7 @@
 
 ---
 
-# 🎥 Tube Sight Fetcher — YouTube Downloader
+# 🎥 YouTube Downloader
 
 A **fast, modern YouTube downloader** with a polished **React/TypeScript** frontend (created with [Lovable.dev](https://lovable.dev)) and a **Python** backend powered by **yt-dlp** and **FFmpeg**.
 
@@ -12,7 +12,8 @@ Paste a link → Preview the video → Pick format/quality → Save it where you
 * 📹 **Video:** MP4 (1080p / 720p / 480p / 360p)
 * 🎵 **Audio:** MP3 (320 / 192 / 128 kbps)
 * 💾 **Save-As** support on Chromium browsers (File System Access API)
-* 🔒 **Works locally:** your downloads never leave your machine
+* � **Completion notification** when your download finishes
+* �🔒 **Works locally:** your downloads never leave your machine
 
 ---
 
@@ -123,6 +124,12 @@ npm run preview
 
 * Files stored in temp folder (auto-cleaned after \~1 hour)
 * Final file saved in browser’s chosen location or default **Downloads** folder
+
+### Notifications
+
+The app shows a "Download Complete" toast notification when your download finishes.
+This appears for all save paths (file picker save, fallback save, and new-tab fallback).
+
 
 ---
 

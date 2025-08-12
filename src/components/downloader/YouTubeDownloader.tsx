@@ -172,7 +172,7 @@ export default function YouTubeDownloader() {
             // Stream directly to the file chosen by the user
             const writable = await saveHandle.createWritable();
             await (fileRes.body as any).pipeTo(writable as any);
-            toast.success(`Saved: ${finalName}`);
+            toast.success(`✅ Download Complete! Saved: ${finalName}`);
           } else if (typeof (window as any).showSaveFilePicker === 'function') {
             // If picker is available but we didn't open it earlier, open now as a fallback
             const types = format === 'mp3'
@@ -181,7 +181,7 @@ export default function YouTubeDownloader() {
             const handle = await (window as any).showSaveFilePicker({ suggestedName: finalName, types });
             const writable = await handle.createWritable();
             await (fileRes.body as any).pipeTo(writable as any);
-            toast.success(`Saved: ${finalName}`);
+            toast.success(`✅ Download Complete! Saved: ${finalName}`);
           } else {
             // Fallback: Blob + anchor with filename
             const blob = await fileRes.blob();
@@ -193,12 +193,13 @@ export default function YouTubeDownloader() {
             a.click();
             a.remove();
             URL.revokeObjectURL(urlObj);
-            toast.success(`Download started: ${finalName}`);
+            toast.success(`✅ Download Complete! Started: ${finalName}`);
           }
         } catch (saveErr: any) {
           console.error('Save error, falling back to direct download:', saveErr);
           // Last resort: open server URL (browser decides where to save)
           window.open(downloadUrl, '_blank');
+          toast.success(`✅ Download Complete! File opened in new tab: ${finalName}`);
         }
       } else {
         throw new Error('No download URL returned');
