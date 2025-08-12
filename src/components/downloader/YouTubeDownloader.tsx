@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, Link as LinkIcon, Settings } from "lucide-react";
+import { Download, Link as LinkIcon } from "lucide-react";
 
 interface OEmbedMeta {
   title: string;
@@ -20,8 +19,8 @@ interface OEmbedMeta {
 const YT_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/)[\w-]{11}(?:[&#?].*)?$/i;
 
 const getBackendConfig = () => ({
-  url: localStorage.getItem("ytBackendUrl") || "",
-  key: localStorage.getItem("ytBackendKey") || "",
+  url: "http://localhost:5000",
+  key: "",
 });
 
 export default function YouTubeDownloader() {
@@ -31,7 +30,7 @@ export default function YouTubeDownloader() {
   const [meta, setMeta] = useState<OEmbedMeta | null>(null);
   const [format, setFormat] = useState<"mp4" | "mp3">("mp4");
   const [quality, setQuality] = useState("1080p");
-  const [openSettings, setOpenSettings] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,7 +82,7 @@ export default function YouTubeDownloader() {
       setLoadingMeta(false);
     }
   };
-
+ 
   const qualityOptions = useMemo(() => {
     return format === "mp4"
       ? ["1080p", "720p", "480p", "360p"]
@@ -91,40 +90,125 @@ export default function YouTubeDownloader() {
   }, [format]);
 
   const tryDownload = async () => {
-    const cfg = getBackendConfig();
-    if (!cfg.url) {
-      setOpenSettings(true);
-      toast.info("Connect a backend to enable downloads.");
-      return;
-    }
     if (!meta) {
       toast.error("Load video info first.");
       return;
     }
 
-    const promise = (async () => {
-      const res = await fetch(`${cfg.url.replace(/\/$/, "")}/download`, {
+    setDownloading(true);
+
+    try {
+      const cfg = getBackendConfig();
+
+      // Prepare a filename and, if available, prompt the user to choose where to save FIRST
+      const suggestedName = meta?.title
+        ? `${meta.title}.${format === 'mp3' ? 'mp3' : 'mp4'}`
+        : (format === 'mp3' ? 'audio.mp3' : 'video.mp4');
+
+      let saveHandle: any | null = null;
+      const hasSavePicker = typeof (window as any).showSaveFilePicker === 'function';
+      if (hasSavePicker) {
+        try {
+          const types = format === 'mp3'
+            ? [{ description: 'MP3 Audio', accept: { 'audio/mpeg': ['.mp3'] } }]
+            : [{ description: 'MP4 Video', accept: { 'video/mp4': ['.mp4'] } }];
+          // Call picker immediately during the user gesture
+          saveHandle = await (window as any).showSaveFilePicker({ suggestedName, types });
+        } catch (pickerErr: any) {
+          // If the user cancels the picker, abort gracefully
+          if (pickerErr && (pickerErr.name === 'AbortError' || pickerErr.code === 20)) {
+            toast.info('Save cancelled');
+            setDownloading(false);
+            return;
+          }
+          // For other picker errors, continue with fallback later
+          console.warn('Save picker error, will fallback later:', pickerErr);
+          saveHandle = null;
+        }
+      }
+
+      // Check if backend is running
+      try {
+        await fetch(`${cfg.url}/health`);
+      } catch (e) {
+        toast.error("Backend not running. Please start the Python server first.");
+        setDownloading(false);
+        return;
+      }
+
+      console.log("Sending download request:", { url, format, quality });
+
+      const res = await fetch(`${cfg.url}/download`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(cfg.key ? { Authorization: `Bearer ${cfg.key}` } : {}),
         },
         body: JSON.stringify({ url, format, quality }),
       });
-      if (!res.ok) throw new Error("Backend error – check settings");
+
+      console.log("Response status:", res.status);
+
+      if (!res.ok) {
+        let errorMessage = "Download failed";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
       const data = await res.json();
       if (data?.downloadUrl) {
-        window.location.href = data.downloadUrl;
-      } else {
-        throw new Error("No download URL returned");
-      }
-    })();
+        const downloadUrl = `${cfg.url}${data.downloadUrl}`;
+        const finalName = data.filename || (format === 'mp3' ? 'audio.mp3' : 'video.mp4');
 
-    toast.promise(promise, {
-      loading: "Preparing download…",
-      success: "Download ready!",
-      error: (e) => e.message || "Failed to prepare download",
-    });
+        try {
+          const fileRes = await fetch(downloadUrl);
+          if (!fileRes.ok) throw new Error('Failed to fetch file for saving');
+
+          if (saveHandle && fileRes.body && 'WritableStream' in window) {
+            // Stream directly to the file chosen by the user
+            const writable = await saveHandle.createWritable();
+            await (fileRes.body as any).pipeTo(writable as any);
+            toast.success(`Saved: ${finalName}`);
+          } else if (typeof (window as any).showSaveFilePicker === 'function') {
+            // If picker is available but we didn't open it earlier, open now as a fallback
+            const types = format === 'mp3'
+              ? [{ description: 'MP3 Audio', accept: { 'audio/mpeg': ['.mp3'] } }]
+              : [{ description: 'MP4 Video', accept: { 'video/mp4': ['.mp4'] } }];
+            const handle = await (window as any).showSaveFilePicker({ suggestedName: finalName, types });
+            const writable = await handle.createWritable();
+            await (fileRes.body as any).pipeTo(writable as any);
+            toast.success(`Saved: ${finalName}`);
+          } else {
+            // Fallback: Blob + anchor with filename
+            const blob = await fileRes.blob();
+            const urlObj = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = urlObj;
+            a.download = finalName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(urlObj);
+            toast.success(`Download started: ${finalName}`);
+          }
+        } catch (saveErr: any) {
+          console.error('Save error, falling back to direct download:', saveErr);
+          // Last resort: open server URL (browser decides where to save)
+          window.open(downloadUrl, '_blank');
+        }
+      } else {
+        throw new Error('No download URL returned');
+      }
+    } catch (error: any) {
+      console.error("Download error:", error);
+      toast.error(error.message || "Failed to download video");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -202,17 +286,14 @@ export default function YouTubeDownloader() {
                     <div className="space-y-2">
                       <Label>Actions</Label>
                       <div className="flex gap-2">
-                        <Button onClick={tryDownload} variant="hero" className="flex-1">
-                          <Download /> Download
+                        <Button
+                          onClick={tryDownload}
+                          variant="hero"
+                          className="flex-1"
+                          disabled={downloading}
+                        >
+                          <Download /> {downloading ? "Downloading..." : "Download"}
                         </Button>
-                        <Dialog open={openSettings} onOpenChange={setOpenSettings}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" title="Backend settings">
-                              <Settings />
-                            </Button>
-                          </DialogTrigger>
-                          <BackendSettings onClose={() => setOpenSettings(false)} />
-                        </Dialog>
                       </div>
                     </div>
                   </div>
@@ -222,59 +303,12 @@ export default function YouTubeDownloader() {
 
             {!meta && (
               <div className="rounded-md border p-4 text-sm text-muted-foreground">
-                Tip: use the Preview button to load title and thumbnail. Downloads require connecting a backend.
+                Tip: use the Preview button to load title and thumbnail. Make sure the Python backend is running on port 5000.
               </div>
             )}
           </CardContent>
         </Card>
       </div>
     </section>
-  );
-}
-
-function BackendSettings({ onClose }: { onClose?: () => void }) {
-  const [url, setUrl] = useState(localStorage.getItem("ytBackendUrl") || "");
-  const [key, setKey] = useState(localStorage.getItem("ytBackendKey") || "");
-
-  const save = () => {
-    localStorage.setItem("ytBackendUrl", url.trim());
-    localStorage.setItem("ytBackendKey", key.trim());
-    toast.success("Backend saved");
-    onClose?.();
-  };
-
-  return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Connect a backend</DialogTitle>
-        <DialogDescription>
-          Set your API endpoint that prepares download links. We'll POST {"{"} url, format, quality {"}"} to /download.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="backend-url">Backend base URL</Label>
-          <Input
-            id="backend-url"
-            placeholder="https://your-api.example.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="backend-key">API key (optional)</Label>
-          <Input
-            id="backend-key"
-            placeholder="Bearer token or secret"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="hero" onClick={save}>Save</Button>
-        </div>
-      </div>
-    </DialogContent>
   );
 }

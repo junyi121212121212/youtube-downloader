@@ -1,73 +1,199 @@
-# Welcome to your Lovable project
+# Tube Sight Fetcher — YouTube Downloader
 
-## Project info
+A fast, modern YouTube downloader with a polished React/TypeScript frontend (created with Lovable.dev) and a Python backend powered by yt-dlp and FFmpeg. Paste a link, preview the video, pick format/quality, and save it where you want.
 
-**URL**: https://lovable.dev/projects/a53c905d-5750-47aa-ac12-e87245db8991
+- Video: MP4 (1080p / 720p / 480p / 360p)
+- Audio: MP3 (320 / 192 / 128 kbps)
+- Save-As support on Chromium browsers (File System Access API)
+- Works locally: your downloads never leave your machine
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Contents
+- Quick start (Windows one-click)
+- Manual setup (all platforms)
+- How it works
+- Requirements
+- FFmpeg notes
+- Cookies for restricted videos
+- API
+- Troubleshooting
+- Project structure
+- Scripts
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a53c905d-5750-47aa-ac12-e87245db8991) and start prompting.
+## Quick start (Windows)
 
-Changes made via Lovable will be committed automatically to this repo.
+The simplest way is to use the included batch scripts.
 
-**Use your preferred IDE**
+1) Start both backend and frontend (recommended)
+```bat
+start_both.bat
+```
+- Opens two terminals: backend (Python) and frontend (Vite)
+- Backend runs at http://localhost:5000
+- Frontend runs at http://localhost:5173
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2) Start individually
+```bat
+# Backend (yt-dlp + FFmpeg autodetect)
+start_backend_ytdlp.bat
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Frontend (React dev server)
+start_frontend.bat
 ```
 
-**Edit a file directly in GitHub**
+Notes
+- The backend script detects FFmpeg in ./ffmpeg/bin/ffmpeg.exe first, then PATH; if not found it can auto-download a portable FFmpeg.
+- Keep both terminals open while using the app.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Manual setup (all platforms)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Prereqs
+- Node.js 18+
+- Python 3.9+
+- FFmpeg installed (or placed at ./ffmpeg/bin/ffmpeg[.exe])
 
-## What technologies are used for this project?
+Backend (Python)
+```bash
+# Install Python deps
+pip install -r requirements_ytdlp.txt
 
-This project is built with:
+# Start the server
+python install_videos_ytdlp.py
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Frontend (Node)
+```bash
+npm install
+npm run dev
+```
+Visit http://localhost:5173
 
-## How can I deploy this project?
+Production build
+```bash
+npm run build
+# preview
+npm run preview
+```
 
-Simply open [Lovable](https://lovable.dev/projects/a53c905d-5750-47aa-ac12-e87245db8991) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## How it works
 
-Yes, you can!
+- Frontend (React + Vite) validates your YouTube URL, fetches oEmbed metadata for a quick preview, and sends your selected options to the backend.
+- Backend (Flask + yt-dlp) downloads the media into a temporary folder, optionally merging video+audio with FFmpeg, then exposes the file via a short-lived URL for your browser to download.
+- Save As: On Chromium browsers, we use the File System Access API to prompt for a save location. On non-Chromium browsers, a standard download prompt is used with a suggested filename.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Default behavior
+- Files are first written to a temp folder (auto-cleaned after ~1 hour)
+- The file you keep is saved by your browser in the folder you choose (or your default Downloads folder if you skip the Save dialog)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+
+## Requirements
+
+Backend
+- Python 3.9+
+- yt-dlp (latest), Flask, flask-cors
+- FFmpeg available on PATH or at ./ffmpeg/bin/ffmpeg[.exe]
+
+Frontend
+- Node.js 18+
+- Chrome/Edge/Brave for Save-As (others fall back to standard download)
+
+---
+
+## FFmpeg notes
+
+- Many YouTube videos provide separate video and audio streams. FFmpeg is required to merge them into MP4.
+- The backend auto-detects FFmpeg in this order:
+  1. ./ffmpeg/bin/ffmpeg[.exe]
+  2. PATH (where ffmpeg)
+  3. Environment variables: FFMPEG_PATH / YTDLP_FFMPEG / FFMPEG_BIN
+- If not present, the Windows batch script can download a portable FFmpeg automatically.
+
+---
+
+## Cookies for restricted videos (optional)
+
+Some videos are age/region restricted. You can provide cookies to improve access.
+
+1) Install a “cookies.txt” exporter extension in your browser (e.g., “Get cookies.txt”)
+2) While logged into YouTube, export cookies for youtube.com
+3) Save the file as cookies.txt in the project root
+
+The backend will detect and use it automatically.
+
+---
+
+## API (local)
+
+- POST /download
+  - body: { url: string, format: "mp4" | "mp3", quality: "1080p" | "720p" | "480p" | "360p" | "320 kbps" | "192 kbps" | "128 kbps" }
+  - returns: { downloadUrl: string, filename: string, title: string }
+- GET /file/<download_id>
+  - returns the binary file as an attachment
+- GET /health
+  - returns basic health status
+- GET /test
+  - attempts to fetch info for a known public video to verify yt-dlp
+
+---
+
+## Troubleshooting
+
+- Backend window closes immediately
+  - Open a terminal first and run the script so you can see errors
+  - Ensure Python is on PATH: `python --version`
+- 403 Forbidden / 400 Bad Request
+  - Update yt-dlp to latest: `pip install -U yt-dlp`
+  - Try a different quality (e.g., 720p) or a different video
+  - Provide cookies.txt (see above)
+- No Save dialog appears
+  - Chromium browsers only for File System Access API
+  - Fallback will still prompt a save with a suggested filename
+- “Backend not running”
+  - Start `start_backend_ytdlp.bat` (or `python install_videos_ytdlp.py`)
+  - Check http://localhost:5000/health and http://localhost:5000/test
+- FFmpeg not found
+  - Put ffmpeg.exe at `./ffmpeg/bin/ffmpeg.exe` or install FFmpeg and add to PATH
+
+---
+
+## Project structure
+```
+├── public/
+├── src/                         # React + TypeScript frontend
+│   └── components/downloader/YouTubeDownloader.tsx
+├── install_videos_ytdlp.py      # Flask backend (yt-dlp + FFmpeg)
+├── requirements_ytdlp.txt       # Python dependencies for backend
+├── start_backend_ytdlp.bat      # Windows: backend with FFmpeg autodetect
+├── start_frontend.bat           # Windows: frontend dev server
+├── start_both.bat               # Windows: starts backend + frontend
+├── ffmpeg/bin/ffmpeg.exe        # Optional local FFmpeg (Windows)
+├── package.json
+├── vite.config.ts
+└── README.md
+```
+
+---
+
+## Scripts
+
+Frontend
+- npm run dev — start dev server
+- npm run build — production build
+- npm run preview — preview the build
+
+Backend
+- start_backend_ytdlp.bat — Windows launcher with FFmpeg autodetect
+- python install_videos_ytdlp.py — start backend manually
+
+---
+
+## Legal / Fair Use
+This project is for personal use. Respect YouTube’s Terms of Service and copyright laws in your jurisdiction. Only download content you have rights to access.

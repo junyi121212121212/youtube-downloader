@@ -7,14 +7,14 @@ const Index = () => {
   useEffect(() => {
     document.title = "YouTube Downloader — Fast, Free, No Fuss";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Fast YouTube Downloader frontend. Paste a link, preview the video, and prepare MP4 or MP3 downloads in seconds.");
+    if (meta) meta.setAttribute("content", "Youtube Downloader frontend. Paste a link, preview the video, and prepare MP4 or MP3 downloads in seconds.");
   }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <header className="hero-gradient">
         <div className="container py-16 md:py-24 text-center text-primary-foreground">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">Fast YouTube Downloader</h1>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">Youtube Downloader</h1>
           <p className="mt-4 text-base md:text-lg opacity-90">Paste a link, preview instantly, and prepare MP4/MP3 downloads.</p>
           <div className="mt-8 flex items-center justify-center">
             <Button variant="hero" size="lg">
@@ -45,7 +45,7 @@ const Index = () => {
 
       <footer className="border-t">
         <div className="container py-8 text-sm text-muted-foreground">
-          Built with ❤️ on Lovable. This is a frontend-only demo; connect your API to enable downloads.
+          Built with ❤️ on Lovable..
         </div>
       </footer>
     </div>
