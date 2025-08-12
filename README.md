@@ -1,41 +1,53 @@
-# Tube Sight Fetcher — YouTube Downloader
-
-A fast, modern YouTube downloader with a polished React/TypeScript frontend (created with Lovable.dev) and a Python backend powered by yt-dlp and FFmpeg. Paste a link, preview the video, pick format/quality, and save it where you want.
-
-- Video: MP4 (1080p / 720p / 480p / 360p)
-- Audio: MP3 (320 / 192 / 128 kbps)
-- Save-As support on Chromium browsers (File System Access API)
-- Works locally: your downloads never leave your machine
 
 ---
 
-## Contents
-- Quick start (Windows one-click)
-- Manual setup (all platforms)
-- How it works
-- Requirements
-- FFmpeg notes
-- Cookies for restricted videos
-- API
-- Troubleshooting
-- Project structure
-- Scripts
+# 🎥 Tube Sight Fetcher — YouTube Downloader
+
+A **fast, modern YouTube downloader** with a polished **React/TypeScript** frontend (created with [Lovable.dev](https://lovable.dev)) and a **Python** backend powered by **yt-dlp** and **FFmpeg**.
+
+Paste a link → Preview the video → Pick format/quality → Save it where you want.
+
+**Features:**
+
+* 📹 **Video:** MP4 (1080p / 720p / 480p / 360p)
+* 🎵 **Audio:** MP3 (320 / 192 / 128 kbps)
+* 💾 **Save-As** support on Chromium browsers (File System Access API)
+* 🔒 **Works locally:** your downloads never leave your machine
 
 ---
 
-## Quick start (Windows)
+## 📑 Contents
 
-The simplest way is to use the included batch scripts.
+* [Quick start (Windows one-click)](#-quick-start-windows)
+* [Manual setup (all platforms)](#-manual-setup-all-platforms)
+* [How it works](#-how-it-works)
+* [Requirements](#-requirements)
+* [FFmpeg notes](#-ffmpeg-notes)
+* [Cookies for restricted videos](#-cookies-for-restricted-videos-optional)
+* [API](#-api-local)
+* [Troubleshooting](#-troubleshooting)
+* [Project structure](#-project-structure)
+* [Scripts](#-scripts)
+* [Legal / Fair Use](#-legal--fair-use)
 
-1) Start both backend and frontend (recommended)
+---
+
+## 🚀 Quick start (Windows)
+
+The simplest way is to use the included **batch scripts**.
+
+### 1) Start both backend and frontend (recommended)
+
 ```bat
 start_both.bat
 ```
-- Opens two terminals: backend (Python) and frontend (Vite)
-- Backend runs at http://localhost:5000
-- Frontend runs at http://localhost:5173
 
-2) Start individually
+* Opens two terminals: **backend (Python)** and **frontend (Vite)**
+* Backend → [http://localhost:5000](http://localhost:5000)
+* Frontend → [http://localhost:5173](http://localhost:5173)
+
+### 2) Start individually
+
 ```bat
 # Backend (yt-dlp + FFmpeg autodetect)
 start_backend_ytdlp.bat
@@ -44,20 +56,23 @@ start_backend_ytdlp.bat
 start_frontend.bat
 ```
 
-Notes
-- The backend script detects FFmpeg in ./ffmpeg/bin/ffmpeg.exe first, then PATH; if not found it can auto-download a portable FFmpeg.
-- Keep both terminals open while using the app.
+**Notes:**
+
+* Backend detects FFmpeg in `./ffmpeg/bin/ffmpeg.exe` first, then PATH; if not found, it can auto-download a portable FFmpeg.
+* Keep both terminals open while using the app.
 
 ---
 
-## Manual setup (all platforms)
+## 🛠 Manual setup (all platforms)
 
-Prereqs
-- Node.js 18+
-- Python 3.9+
-- FFmpeg installed (or placed at ./ffmpeg/bin/ffmpeg[.exe])
+**Prerequisites:**
 
-Backend (Python)
+* Node.js **18+**
+* Python **3.9+**
+* FFmpeg installed (or placed at `./ffmpeg/bin/ffmpeg[.exe]`)
+
+### Backend (Python)
+
 ```bash
 # Install Python deps
 pip install -r requirements_ytdlp.txt
@@ -66,105 +81,150 @@ pip install -r requirements_ytdlp.txt
 python install_videos_ytdlp.py
 ```
 
-Frontend (Node)
+### Frontend (Node)
+
 ```bash
 npm install
 npm run dev
 ```
-Visit http://localhost:5173
 
-Production build
+Visit → [http://localhost:5173](http://localhost:5173)
+
+**Production build:**
+
 ```bash
 npm run build
-# preview
+# Preview
 npm run preview
 ```
 
 ---
 
-## How it works
+## ⚙ How it works
 
-- Frontend (React + Vite) validates your YouTube URL, fetches oEmbed metadata for a quick preview, and sends your selected options to the backend.
-- Backend (Flask + yt-dlp) downloads the media into a temporary folder, optionally merging video+audio with FFmpeg, then exposes the file via a short-lived URL for your browser to download.
-- Save As: On Chromium browsers, we use the File System Access API to prompt for a save location. On non-Chromium browsers, a standard download prompt is used with a suggested filename.
+1. **Frontend (React + Vite)**
 
-Default behavior
-- Files are first written to a temp folder (auto-cleaned after ~1 hour)
-- The file you keep is saved by your browser in the folder you choose (or your default Downloads folder if you skip the Save dialog)
+   * Validates your YouTube URL
+   * Fetches oEmbed metadata for preview
+   * Sends selected options to the backend
 
----
+2. **Backend (Flask + yt-dlp)**
 
-## Requirements
+   * Downloads the media into a temporary folder
+   * Merges video+audio with FFmpeg (if needed)
+   * Exposes file via a short-lived URL for browser download
 
-Backend
-- Python 3.9+
-- yt-dlp (latest), Flask, flask-cors
-- FFmpeg available on PATH or at ./ffmpeg/bin/ffmpeg[.exe]
+3. **Save As behavior:**
 
-Frontend
-- Node.js 18+
-- Chrome/Edge/Brave for Save-As (others fall back to standard download)
+   * Chromium browsers → File System Access API (custom save location)
+   * Non-Chromium → Standard download prompt with suggested filename
 
----
+**Default behavior:**
 
-## FFmpeg notes
-
-- Many YouTube videos provide separate video and audio streams. FFmpeg is required to merge them into MP4.
-- The backend auto-detects FFmpeg in this order:
-  1. ./ffmpeg/bin/ffmpeg[.exe]
-  2. PATH (where ffmpeg)
-  3. Environment variables: FFMPEG_PATH / YTDLP_FFMPEG / FFMPEG_BIN
-- If not present, the Windows batch script can download a portable FFmpeg automatically.
+* Files stored in temp folder (auto-cleaned after \~1 hour)
+* Final file saved in browser’s chosen location or default **Downloads** folder
 
 ---
 
-## Cookies for restricted videos (optional)
+## 📋 Requirements
 
-Some videos are age/region restricted. You can provide cookies to improve access.
+**Backend:**
 
-1) Install a “cookies.txt” exporter extension in your browser (e.g., “Get cookies.txt”)
-2) While logged into YouTube, export cookies for youtube.com
-3) Save the file as cookies.txt in the project root
+* Python 3.9+
+* yt-dlp (latest), Flask, flask-cors
+* FFmpeg in PATH or `./ffmpeg/bin/ffmpeg[.exe]`
 
-The backend will detect and use it automatically.
+**Frontend:**
 
----
-
-## API (local)
-
-- POST /download
-  - body: { url: string, format: "mp4" | "mp3", quality: "1080p" | "720p" | "480p" | "360p" | "320 kbps" | "192 kbps" | "128 kbps" }
-  - returns: { downloadUrl: string, filename: string, title: string }
-- GET /file/<download_id>
-  - returns the binary file as an attachment
-- GET /health
-  - returns basic health status
-- GET /test
-  - attempts to fetch info for a known public video to verify yt-dlp
+* Node.js 18+
+* Chrome / Edge / Brave for Save-As (others → standard download)
 
 ---
 
-## Troubleshooting
+## 🎞 FFmpeg notes
 
-- Backend window closes immediately
-  - Open a terminal first and run the script so you can see errors
-  - Ensure Python is on PATH: `python --version`
-- 403 Forbidden / 400 Bad Request
-  - Update yt-dlp to latest: `pip install -U yt-dlp`
-  - Try a different quality (e.g., 720p) or a different video
-  - Provide cookies.txt (see above)
-- No Save dialog appears
-  - Chromium browsers only for File System Access API
-  - Fallback will still prompt a save with a suggested filename
-- “Backend not running”
-  - Start `start_backend_ytdlp.bat` (or `python install_videos_ytdlp.py`)
-  - Check http://localhost:5000/health and http://localhost:5000/test
-- FFmpeg not found
-  - Put ffmpeg.exe at `./ffmpeg/bin/ffmpeg.exe` or install FFmpeg and add to PATH
+* Many YouTube videos have **separate video/audio streams** → FFmpeg required to merge into MP4.
+* Auto-detect order:
+
+  1. `./ffmpeg/bin/ffmpeg[.exe]`
+  2. PATH (`where ffmpeg`)
+  3. Environment vars: `FFMPEG_PATH`, `YTDLP_FFMPEG`, `FFMPEG_BIN`
+* If missing, Windows batch script can auto-download portable FFmpeg.
 
 ---
 
-## Project structure
+## 🍪 Cookies for restricted videos (optional)
+
+Some videos are **age/region restricted**. Cookies help bypass restrictions.
+
+1. Install a `cookies.txt` exporter extension (e.g., “Get cookies.txt”)
+2. While logged in to YouTube, export cookies for `youtube.com`
+3. Save as `cookies.txt` in the project root
+
+Backend will detect and use automatically.
+
+---
+
+## 📡 API (local)
+
+### POST `/download`
+
+* **Body:**
+
+  ```json
+  {
+    "url": "string",
+    "format": "mp4" | "mp3",
+    "quality": "1080p" | "720p" | "480p" | "360p" | "320 kbps" | "192 kbps" | "128 kbps"
+  }
+  ```
+* **Returns:** `{ downloadUrl, filename, title }`
+
+### GET `/file/<download_id>`
+
+Returns binary file as attachment.
+
+### GET `/health`
+
+Returns basic health status.
+
+### GET `/test`
+
+Fetches info for a known public video to verify yt-dlp.
+
+---
+
+## 🩺 Troubleshooting
+
+* **Backend window closes immediately**
+
+  * Run from terminal to see errors
+  * Ensure Python in PATH → `python --version`
+
+* **403 / 400 errors**
+
+  * Update yt-dlp → `pip install -U yt-dlp`
+  * Try different quality or video
+  * Provide `cookies.txt`
+
+* **No Save dialog**
+
+  * Only Chromium browsers support File System Access API
+  * Fallback → normal download prompt
+
+* **Backend not running**
+
+  * Start `start_backend_ytdlp.bat` or `python install_videos_ytdlp.py`
+  * Check health at [http://localhost:5000/health](http://localhost:5000/health)
+
+* **FFmpeg not found**
+
+  * Place at `./ffmpeg/bin/ffmpeg.exe` or install globally
+
+---
+
+## 📂 Project structure
+
 ```
 ├── public/
 ├── src/                         # React + TypeScript frontend
@@ -182,18 +242,26 @@ The backend will detect and use it automatically.
 
 ---
 
-## Scripts
+## 📜 Scripts
 
-Frontend
-- npm run dev — start dev server
-- npm run build — production build
-- npm run preview — preview the build
+**Frontend:**
 
-Backend
-- start_backend_ytdlp.bat — Windows launcher with FFmpeg autodetect
-- python install_videos_ytdlp.py — start backend manually
+* `npm run dev` — Start dev server
+* `npm run build` — Production build
+* `npm run preview` — Preview build
+
+**Backend:**
+
+* `start_backend_ytdlp.bat` — Windows launcher with FFmpeg autodetect
+* `python install_videos_ytdlp.py` — Start backend manually
 
 ---
 
-## Legal / Fair Use
-This project is for personal use. Respect YouTube’s Terms of Service and copyright laws in your jurisdiction. Only download content you have rights to access.
+## ⚖ Legal / Fair Use
+
+This project is for **personal use**.
+Respect **YouTube’s Terms of Service** and **copyright laws** in your jurisdiction.
+Only download content you have the rights to access.
+
+---
+
