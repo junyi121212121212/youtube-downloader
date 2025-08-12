@@ -1,7 +1,7 @@
 
 ---
 
-# 🎥 Tube Sight Fetcher — YouTube Downloader
+# 🎥 YouTube Downloader
 
 A **fast, modern YouTube downloader** with a polished **React/TypeScript** frontend (created with [Lovable.dev](https://lovable.dev)) and a **Python** backend powered by **yt-dlp** and **FFmpeg**.
 
