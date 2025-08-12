@@ -14,7 +14,7 @@ You must have Python 3.9+ and Node.js 18+ installed before running the app.
 The Windows scripts and the local backend depend on them being available in your PATH.
 
 - Download Python: https://www.python.org/downloads/
-- Download Node.js: https://nodejs.org/en/downloads/
+- Download Node.js: https://nodejs.org/en/download/
 
 
 
