@@ -38,6 +38,18 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Brand additions */
+    --brand-1: 258 88% 62%;
+    --brand-2: 282 85% 60%;
+    --brand-3: 220 90% 56%;
+
+    /* Gradients & effects */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--brand-1)), hsl(var(--brand-2)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--accent)));
+    --shadow-soft: 0 10px 30px -10px hsl(var(--brand-1) / 0.35);
+    --shadow-glow: 0 0 32px hsl(var(--brand-2) / 0.35);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -101,5 +113,32 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .hero-gradient {
+    background-image: var(--gradient-hero);
+  }
+  .elevated-card {
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition-smooth);
+  }
+  .elevated-card:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+  .interactive-spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+  .interactive-spotlight:before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    pointer-events: none;
+    background: radial-gradient(600px circle at var(--spot-x, 50%) var(--spot-y, 50%), hsl(var(--brand-2) / 0.15), transparent 40%);
+    z-index: -1;
+    transition: var(--transition-smooth);
   }
 }
